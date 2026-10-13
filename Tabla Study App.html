@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tabla Study App</title>
+<style>
+:root{--bg:#fff8ee;--fg:#2b1d12;--ac:#b4501e;--cd:#fff;--bd:#e6d3bd;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c140e;--fg:#f5e8d8;--ac:#e8803f;--cd:#2a1e15;--bd:#4a3626}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Noto Sans Devanagari",sans-serif;line-height:1.6}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--ac);color:#fff;position:sticky;top:0;z-index:5}
+h1{font-size:19px;margin:0}#mb{background:none;border:0;color:#fff;font-size:26px;cursor:pointer;line-height:1}
+#menu{display:none;position:absolute;right:10px;top:48px;background:var(--cd);border:1px solid var(--bd);border-radius:10px;min-width:210px;box-shadow:0 4px 14px #0004;z-index:9}
+#menu button{display:block;width:100%;text-align:left;padding:12px 16px;background:none;border:0;color:var(--fg);font:inherit;cursor:pointer}
+#menu.on{display:block}main{padding:14px;max-width:760px;margin:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.card{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:14px;cursor:pointer;margin-bottom:10px}
+.card b{color:var(--ac)}.btn{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer;margin:4px 4px 4px 0}
+.paper{background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:18px}
+.back{background:none;border:0;color:var(--ac);font:inherit;cursor:pointer;padding:0 0 8px}
+input,textarea{width:100%;padding:10px;font:inherit;background:var(--cd);color:var(--fg);border:1px solid var(--bd);border-radius:8px;margin:4px 0}
+#note{min-height:130px;background:var(--cd);border:1px solid var(--bd);border-radius:10px;padding:10px;overflow:auto}
+#note img{max-width:100%}.kb{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.kb button{min-width:36px;height:40px;border:1px solid var(--bd);border-radius:7px;background:var(--cd);color:var(--fg);font-size:17px;cursor:pointer}
+.tabs button{opacity:.6}.tabs button.on{opacity:1}
+canvas{width:100%;height:170px;background:#fff;border:1px solid var(--bd);border-radius:10px;touch-action:none}
+@media print{header,.noprint{display:none!important}.paper{border:0}body{background:#fff;color:#000}}
+</style></head><body>
+<header><h1>🥁 Tabla Study App</h1><button id="mb" aria-label="Menu">⋮</button>
+<div id="menu"><button data-v="books">📚 Books &amp; Exam Papers</button><button data-v="taal">🥁 Taals &amp; Bols</button><button data-v="artists">🎶 Artists &amp; Search</button><button data-v="kb">⌨️ Keyboard &amp; Handwriting</button></div></header>
+<main id="app"></main>
+<script>
+const $=s=>document.querySelector(s),app=$('#app');
+const lv=["Prarambhik","Praveshika Pratham","Praveshika Purna","Madhyama Pratham","Madhyama Purna","Visharad Pratham","Visharad Purna","Alankar Pratham","Alankar Purna","Mixed Practice"];
+const tals=[["Teentaal",16,"4+4+4+4","Tali 1, 5, 13 · Khali 9","Dha Dhin Dhin Dha | Dha Dhin Dhin Dha | Dha Tin Tin Ta | Ta Dhin Dhin Dha"],
+["Jhaptaal",10,"2+3+2+3","Tali 1, 3, 8 · Khali 6","Dhi Na | Dhi Dhi Na | Ti Na | Dhi Dhi Na"],
+["Ektaal",12,"2+2+2+2+2+2","Tali 1, 5, 9, 11 · Khali 3, 7","Dhin Dhin | DhaGe TiRaKiTa | Tu Na | Kat Ta | DhaGe TiRaKiTa | Dhi Na"],
+["Rupak",7,"3+2+2","Khali 1 · Tali 4, 6","Tin Tin Na | Dhi Na | Dhi Na"],
+["Dadra",6,"3+3","Tali 1 · Khali 4","Dha Dhi Na | Dha Ti Na"],
+["Kaharwa",8,"4+4","Tali 1 · Khali 5","Dha Ge Na Ti | Na Ka Dhi Na"],
+["Chautaal",12,"2+2+2+2+2+2","Tali 1, 5, 9, 11 · Khali 3, 7","Dha Dha | Din Ta | Kit Dha | Din Ta | Tit Kat | Gadi Gana"],
+["Dhamar",14,"5+2+3+4","Tali 1, 6, 11 · Khali 8",""],
+["Teevra",7,"3+2+2","Tali 1, 4, 6",""],
+["Deepchandi",14,"3+4+3+4","Tali 1, 4, 11 · Khali 8","Dha Dhin – | Dha Dha Dhin – | Ta Tin – | Dha Dha Dhin –"]];
+const tp=["Origin of the Tabla","Parts of the Tabla","Bols and Theka","Matra, Vibhag, Tali and Khali","Laya and Layakari","Kayda and Palte","Tukda and Mukhda","Tihai","Rela","Gat","Paran","Accompaniment (Sangat)"];
+const ex=["First","Second","Third","Fourth","Fifth (Final)"];
+const ar=[["Zakir Hussain","World-famous tabla maestro, born in 1951 in Mumbai. His father and guru was Ustad Alla Rakha. He performed on stage from a very young age. He carried the Punjab gharana tradition across the world. The fusion band Shakti made him famous globally. He received the Padma Shri, Padma Bhushan and Padma Vibhushan, and several Grammy awards. He passed away on 15 December 2024 in San Francisco."],
+["Ustad Alla Rakha","Great tabla player of the Punjab gharana, born in 1919 near Jammu. He accompanied Pandit Ravi Shankar for many years. He helped give the tabla the status of a solo instrument. Zakir Hussain is his son and disciple. He passed away in 2000."],
+["Pandit Kishan Maharaj","Famous tabla player of the Benares gharana (1923–2008). His playing was powerful, prepared and rich in laya. He accompanied many leading vocalists and instrumentalists. He received the Padma Shri and Padma Vibhushan."],
+["Pandit Samta Prasad","Leading Benares gharana tabla player, known as 'Gudai Maharaj' (1921–1994). He excelled in both solo and accompaniment. He was known for clear, sweet and full-bodied bols."],
+["Pandit Suresh Talwalkar","Renowned tabla player and teacher from Maharashtra, born in Mumbai. He trained under Pandit Laxman (Nana) Mule and Pandit Nikhil Ghosh. He is respected for solo, vocal, instrumental and dance accompaniment, and has trained many students."],
+["Pandit Nikhil Ghosh","Tabla player and teacher (1918–1995). He founded the Sangit Mahabharati institute in Mumbai. His systematic teaching method produced many well-known students."],
+["Pakhawaj – Pandit Bhavani Shankar","The pakhawaj is an ancient percussion instrument that accompanies Dhrupad and Dhamar singing. Pandit Bhavani Shankar is a well-known pakhawaj artist. Its deep, solemn tone is its main feature."],
+["Harmonium – Pandit Appa Jalgaonkar","A leading harmonium accompanist and soloist from Maharashtra. By accompanying singers with beautiful support and by solo playing, he raised the harmonium to a respected place in classical music."]];
+const inst="Tabla · Pakhawaj · Harmonium · Sitar · Flute (Bansuri) · Sarod · Santoor · Sarangi · Dholak · Violin · Shehnai";
+const ca=()=>{try{return JSON.parse(localStorage.getItem('ca')||'[]')}catch(e){return[]}};
+const v={
+books(){app.innerHTML='<h2>📚 Tabla Books</h2><div class="grid">'+lv.map((l,i)=>`<div class="card" onclick="book(${i})"><b>Book ${i+1}</b><br>${l}</div>`).join('')+'</div>'},
+taal(){app.innerHTML='<h2>🥁 Taals &amp; Bols</h2>'+tals.map((t,i)=>`<div class="card" style="cursor:auto"><b>${i+1}. ${t[0]}</b> – ${t[1]} matras<br>Vibhag: ${t[2]}<br>${t[3]}<br>${t[4]?'<b>Theka:</b> '+t[4]:'<i>Theka bols: learn from your guru / syllabus book.</i>'}</div>`).join('')},
+artists(){draw('')},kb:kbv};
+function draw(q){const all=ca().concat(ar).filter(a=>(a[0]+a[1]).toLowerCase().includes(q.toLowerCase()));
+app.innerHTML=`<h2>🎶 Artists</h2><div class="card" style="cursor:auto"><b>Instruments</b><br>${inst}</div><input id="sq" placeholder="🔍 Search artist or instrument" value="${q}"><details class="card"><summary><b>+ Add an artist</b></summary><input id="an" placeholder="Artist name"><textarea id="at" rows="6" placeholder="Information (up to 15 lines)"></textarea><button class="btn" id="ad">Save artist</button></details>`+(all.map(a=>`<div class="card" style="cursor:auto"><b>${a[0]}</b><p style="white-space:pre-wrap">${a[1]}</p></div>`).join('')||'<p>No artist found. Add one above.</p>');
+const s=$('#sq');s.oninput=()=>{const p=s.selectionStart;draw(s.value);const n=$('#sq');n.focus();n.setSelectionRange(p,p)};
+$('#ad').onclick=()=>{const n=$('#an').value.trim(),t=$('#at').value.trim();if(!n)return;try{localStorage.setItem('ca',JSON.stringify([[n,t||'(no details added)']].concat(ca())))}catch(e){}draw('')}}
+function book(b){app.innerHTML=`<button class="back" onclick="v.books()">← Books</button><h2>Book ${b+1} – ${lv[b]}</h2><div class="grid">`+ex.map((e,i)=>`<div class="card" onclick="paper(${b},${i})"><b>${e} Exam</b><br>Question paper</div>`).join('')+'</div>'}
+function paper(b,n,m=40){const t=k=>tp[(b+n+k)%12],a=tals[(b+n)%10],c=tals[(b+n+3)%10];
+const q={1:[`Write about: ${t(0)}.`,10],2:[`Write the theka of ${a[0]} in thah and dugun laya.`,10],3:[`What is "${t(1)}"? Explain with examples.`,10],4:[`Fill in the blanks: (a) ${c[0]} has ___ matras. (b) ${a[0]} has ___ matras. (c) Khali means ___.`,5],6:[`Practical: Show the theka of ${c[0]} with hand-taal.`,5]};
+const set={40:[1,2,3,4,6],30:[1,2,3],20:[2,4,6]}[m],tm={40:'1 hour',30:'45 minutes',20:'30 minutes'}[m];
+app.innerHTML=`<button class="back noprint" onclick="book(${b})">← Exams</button><div class="noprint">Marks: ${[20,30,40].map(x=>`<button class="btn" onclick="paper(${b},${n},${x})" style="${x==m?'':'opacity:.5'}">${x}</button>`).join('')}</div><div class="paper"><h2 style="text-align:center">Tabla – ${lv[b]} (Book ${b+1})<br>${ex[n]} Exam</h2><p>Time: ${tm} &nbsp; Total marks: ${m}</p><ol>${set.map(i=>`<li>${q[i][0]} (${q[i][1]} marks)</li>`).join('')}</ol></div><button class="btn noprint" onclick="print()">📄 Save as PDF / Print</button><p class="noprint" style="font-size:13px">In the print window choose "Save as PDF".</p>`}
+const L={
+"Marathi":"अ आ इ ई उ ऊ ऋ ए ऐ ओ औ अं अः क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ क्ष ज्ञ ा ि ी ु ू ृ े ै ो ौ ं ः ् ॲ ऑ".split(' '),
+"Hindi":"अ आ इ ई उ ऊ ऋ ए ऐ ओ औ अं अः क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह क्ष त्र ज्ञ क़ ख़ ग़ ज़ ड़ ढ़ फ़ ा ि ी ु ू ृ े ै ो ौ ं ः ् ॉ ।".split(' '),
+"English":"q w e r t y u i o p a s d f g h j k l z x c v b n m 1 2 3 4 5 6 7 8 9 0 . , ? ! - ( )".split(' ')};
+function kbv(){app.innerHTML=`<h2>⌨️ Keyboard &amp; Handwriting</h2><p>Write notes or questions here. Pick a keyboard language or write by hand.</p><div id="note" contenteditable inputmode="none"></div>
+<div class="tabs noprint">${Object.keys(L).map((k,i)=>`<button class="btn ${i?'':'on'}" data-l="${k}">${k}</button>`).join('')}</div><div class="kb" id="keys"></div>
+<div class="kb"><button style="min-width:90px" id="sp">Space</button><button id="bk">⌫</button><button id="en">↵</button></div>
+<h3>✍️ Write by hand</h3><canvas id="cv"></canvas><button class="btn" id="ins">Add to note</button><button class="btn" id="clr">Clear</button>
+<p style="font-size:13px">Note: handwriting is added to the note as a picture; it is not converted to text.</p>`;
+const n=$('#note'),k=$('#keys'),ins=t=>{n.focus();document.execCommand('insertText',false,t)};
+const dr=l=>{k.innerHTML=L[l].map(c=>`<button>${c}</button>`).join('')};dr("English");
+document.querySelectorAll('[data-l]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-l]').forEach(x=>x.classList.remove('on'));b.classList.add('on');dr(b.dataset.l)});
+document.querySelector('.tabs button').classList.remove('on');document.querySelector('[data-l="English"]').classList.add('on');
+app.addEventListener('pointerdown',e=>{if(e.target.closest('.kb button'))e.preventDefault()});
+k.onclick=e=>{if(e.target.tagName=='BUTTON')ins(e.target.textContent)};
+$('#sp').onclick=()=>ins(' ');$('#en').onclick=()=>document.execCommand('insertLineBreak');$('#bk').onclick=()=>{n.focus();document.execCommand('delete')};
+const cv=$('#cv'),x=cv.getContext('2d');let d=0;
+cv.width=cv.clientWidth;cv.height=cv.clientHeight;x.lineWidth=3;x.lineCap='round';
+const p=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+cv.onpointerdown=e=>{d=1;cv.setPointerCapture(e.pointerId);x.beginPath();x.moveTo(...p(e))};
+cv.onpointermove=e=>{if(d){x.lineTo(...p(e));x.stroke()}};cv.onpointerup=()=>d=0;
+$('#clr').onclick=()=>x.clearRect(0,0,cv.width,cv.height);
+$('#ins').onclick=()=>{const i=new Image();i.src=cv.toDataURL();i.style.height='60px';n.appendChild(i);x.clearRect(0,0,cv.width,cv.height)}}
+$('#mb').onclick=()=>$('#menu').classList.toggle('on');
+$('#menu').onclick=e=>{const k=e.target.dataset.v;if(k){v[k]();$('#menu').classList.remove('on')}};
+let LG='en';try{LG=localStorage.getItem('lg')||'en'}catch(e){}
+const UI={
+en:{t:'Tabla Study App',mb:'📚 Books & Exam Papers',mt:'🥁 Taals & Bols',ma:'🎶 Artists & Search',mk:'⌨️ Keyboard & Handwriting',ml:'⚙️ Settings for Language',bh:'Tabla Books',bk:'Book',back:'← Back',ex:['First','Second','Third','Fourth','Fifth (Final)'],exs:'Exam',qp:'Question paper',mw:'Marks',tot:'Total marks',tm:['1 hour','45 minutes','30 minutes'],pdf:'📄 Save as PDF / Print',pdfh:'In the print window choose "Save as PDF".',th:'Theka',no:'Theka bols: learn from your guru / syllabus book.',vib:'Vibhag',mat:'matras',ah:'Artists',inst:'Instruments',ph:'🔍 Search artist or instrument',add:'+ Add an artist',nm:'Artist name',inf:'Information',sv:'Save artist',none:'No artist found. Add one above.',kh:'Keyboard & Handwriting',kn:'Write notes or questions here. Pick a keyboard language or write by hand.',sp:'Space',hw:'Write by hand',ia:'Add to note',cl:'Clear',hint:'Note: handwriting is added to the note as a picture; it is not converted to text.',lh:'Settings for Language',lc:'Choose the app language and press OK.',ok:'OK'},
+mr:{t:'तबला अभ्यास ॲप',mb:'📚 पुस्तके व परीक्षा',mt:'🥁 ताल व बोल',ma:'🎶 वादक व शोध',mk:'⌨️ कीबोर्ड व हस्तलेखन',ml:'⚙️ भाषा सेटिंग',bh:'तबला पुस्तके',bk:'पुस्तक',back:'← मागे',ex:['प्रथम','द्वितीय','तृतीय','चतुर्थ','पाचवी (अंतिम)'],exs:'परीक्षा',qp:'प्रश्नपत्रिका',mw:'गुण',tot:'एकूण गुण',tm:['१ तास','४५ मिनिटे','३० मिनिटे'],pdf:'📄 PDF काढा / प्रिंट',pdfh:'प्रिंट विंडोमध्ये "Save as PDF" निवडा.',th:'ठेका',no:'ठेक्याचे बोल: गुरू / अभ्यासक्रमाच्या पुस्तकातून शिका.',vib:'विभाग',mat:'मात्रा',ah:'वादक',inst:'वाद्ये',ph:'🔍 वादक किंवा वाद्य शोधा',add:'+ वादक जोडा',nm:'वादकाचे नाव',inf:'माहिती',sv:'वादक सेव्ह करा',none:'वादक सापडला नाही. वर जोडा.',kh:'कीबोर्ड व हस्तलेखन',kn:'येथे नोट्स किंवा प्रश्न लिहा. कीबोर्डची भाषा निवडा किंवा हाताने लिहा.',sp:'स्पेस',hw:'हाताने लिहा',ia:'नोटमध्ये घाला',cl:'पुसा',hint:'टीप: हस्तलेखन चित्र स्वरूपात जोडले जाते, अक्षरांत रूपांतर होत नाही.',lh:'भाषा सेटिंग',lc:'ॲपची भाषा निवडा आणि ओके दाबा.',ok:'ओके'},
+hi:{t:'तबला अध्ययन ऐप',mb:'📚 पुस्तकें व परीक्षा',mt:'🥁 ताल व बोल',ma:'🎶 वादक व खोज',mk:'⌨️ कीबोर्ड व हस्तलेखन',ml:'⚙️ भाषा सेटिंग',bh:'तबला पुस्तकें',bk:'पुस्तक',back:'← वापस',ex:['प्रथम','द्वितीय','तृतीय','चतुर्थ','पाँचवीं (अंतिम)'],exs:'परीक्षा',qp:'प्रश्नपत्र',mw:'अंक',tot:'कुल अंक',tm:['१ घंटा','४५ मिनट','३० मिनट'],pdf:'📄 PDF बनाएँ / प्रिंट',pdfh:'प्रिंट विंडो में "Save as PDF" चुनें।',th:'ठेका',no:'ठेके के बोल: गुरु / पाठ्यक्रम की पुस्तक से सीखें।',vib:'विभाग',mat:'मात्राएँ',ah:'वादक',inst:'वाद्य',ph:'🔍 वादक या वाद्य खोजें',add:'+ वादक जोड़ें',nm:'वादक का नाम',inf:'जानकारी',sv:'वादक सेव करें',none:'वादक नहीं मिला। ऊपर जोड़ें।',kh:'कीबोर्ड व हस्तलेखन',kn:'यहाँ नोट्स या प्रश्न लिखें। कीबोर्ड भाषा चुनें या हाथ से लिखें।',sp:'स्पेस',hw:'हाथ से लिखें',ia:'नोट में जोड़ें',cl:'मिटाएँ',hint:'नोट: हस्तलेखन चित्र के रूप में जुड़ता है, अक्षरों में नहीं बदलता।',lh:'भाषा सेटिंग',lc:'ऐप की भाषा चुनें और ओके दबाएँ।',ok:'ओके'}};
+const u=k=>UI[LG][k],E=()=>LG=='en';
+const nd=s=>E()?String(s):String(s).replace(/\d/g,d=>'०१२३४५६७८९'[d]);
+const LVd=['प्रारंभिक','प्रवेशिका प्रथम','प्रवेशिका पूर्ण','मध्यमा प्रथम','मध्यमा पूर्ण','विशारद प्रथम','विशारद पूर्ण','अलंकार प्रथम','अलंकार पूर्ण','मिश्र सराव'];
+const TPd=['तबल्याची उत्पत्ती','तबल्याचे अंग व भाग','बोल व ठेका','मात्रा, विभाग, ताली, खाली','लय व लयकारी','कायदा व पलटे','तुकडा व मुखडा','तिहाई','रेला','गत','परन','साथसंगत'];
+const TNd=['त्रिताल','झपताल','एकताल','रूपक','दादरा','कहरवा','चौताल','धमार','तीव्रा','दीपचंदी'];
+const TBd=['धा धिं धिं धा | धा धिं धिं धा | धा तिं तिं ता | ता धिं धिं धा','धी ना | धी धी ना | ती ना | धी धी ना','धिं धिं | धागे तिरकिट | तू ना | कत्ता | धागे तिरकिट | धी ना','तिन तिन ना | धी ना | धी ना','धा धी ना | धा ती ना','धा गे ना ती | ना क धी ना','धा धा | दिन ता | किट धा | दिन ता | तिट कत | गदी गन','','','धा धिं – | धा धा तिं – | ता तिं – | धा धा धिं –'];
+const LV=i=>E()?lv[i]:LVd[i],TP=i=>E()?tp[i]:TPd[i],TN=i=>E()?tals[i][0]:TNd[i];
+const trT=s=>E()?s:s.replace(/Tali/g,LG=='mr'?'टाळी':'ताली').replace(/Khali/g,'खाली').replace(/\d/g,d=>'०१२३४५६७८९'[d]);
+v.books=()=>{app.innerHTML='<h2>📚 '+u('bh')+'</h2><div class="grid">'+lv.map((l,i)=>`<div class="card" onclick="book(${i})"><b>${u('bk')} ${nd(i+1)}</b><br>${LV(i)}</div>`).join('')+'</div>'};
+function book(b){app.innerHTML=`<button class="back" onclick="v.books()">${u('back')}</button><h2>${u('bk')} ${nd(b+1)} – ${LV(b)}</h2><div class="grid">`+u('ex').map((e,i)=>`<div class="card" onclick="paper(${b},${i})"><b>${e} ${u('exs')}</b><br>${u('qp')}</div>`).join('')+'</div>'}
+v.taal=()=>{app.innerHTML='<h2>🥁 '+u('mt').slice(3)+'</h2>'+tals.map((t,i)=>{const b=E()?t[4]:TBd[i];return `<div class="card" style="cursor:auto"><b>${nd(i+1)}. ${TN(i)}</b> – ${nd(t[1])} ${u('mat')}<br>${u('vib')}: ${nd(t[2])}<br>${trT(t[3])}<br>${b?'<b>'+u('th')+':</b> '+b:'<i>'+u('no')+'</i>'}</div>`}).join('')};
+const Q={en:{1:t=>`Write about: ${t}.`,2:a=>`Write the theka of ${a} in thah and dugun laya.`,3:t=>`What is "${t}"? Explain with examples.`,4:(c,a)=>`Fill in the blanks: (a) ${c} has ___ matras. (b) ${a} has ___ matras. (c) Khali means ___.`,6:c=>`Practical: Show the theka of ${c} with hand-taal.`},
+mr:{1:t=>`${t} यावर माहिती लिहा.`,2:a=>`${a} तालाचा ठेका ठाह व दुगुण लयीत लिहा.`,3:t=>`"${t}" म्हणजे काय? उदाहरणासह स्पष्ट करा.`,4:(c,a)=>`रिकाम्या जागा भरा: (अ) ${c} तालाच्या ___ मात्रा असतात. (आ) ${a} तालाच्या ___ मात्रा असतात. (इ) खाली म्हणजे ___.`,6:c=>`प्रात्यक्षिक: ${c} तालाचा ठेका हातावर तोल करून दाखवा.`},
+hi:{1:t=>`${t} पर जानकारी लिखिए।`,2:a=>`${a} ताल का ठेका ठाह और दुगुन लय में लिखिए।`,3:t=>`"${t}" क्या है? उदाहरण सहित समझाइए।`,4:(c,a)=>`रिक्त स्थान भरिए: (अ) ${c} ताल में ___ मात्राएँ होती हैं। (आ) ${a} ताल में ___ मात्राएँ होती हैं। (इ) खाली का अर्थ ___।`,6:c=>`प्रायोगिक: ${c} ताल का ठेका हाथ से ताली देकर दिखाइए।`}};
+function paper(b,n,m=40){const k=(b+n)%10,j=(b+n+3)%10,q=Q[LG],T=i=>TP((b+n+i)%12);
+const L2={1:[q[1](T(0)),10],2:[q[2](TN(k)),10],3:[q[3](T(1)),10],4:[q[4](TN(j),TN(k)),5],6:[q[6](TN(j)),5]};
+const set={40:[1,2,3,4,6],30:[1,2,3],20:[2,4,6]}[m],ti=u('tm')[{40:0,30:1,20:2}[m]];
+app.innerHTML=`<button class="back noprint" onclick="book(${b})">${u('back')}</button><div class="noprint">${u('mw')}: ${[20,30,40].map(x=>`<button class="btn" onclick="paper(${b},${n},${x})" style="${x==m?'':'opacity:.5'}">${nd(x)}</button>`).join('')}</div><div class="paper"><h2 style="text-align:center">${LV(b)} (${u('bk')} ${nd(b+1)})<br>${u('ex')[n]} ${u('exs')}</h2><p>${ti} &nbsp; ${u('tot')}: ${nd(m)}</p><ol>${set.map(i=>`<li>${L2[i][0]} (${nd(L2[i][1])} ${u('mw')})</li>`).join('')}</ol></div><button class="btn noprint" onclick="print()">${u('pdf')}</button><p class="noprint" style="font-size:13px">${u('pdfh')}</p>`}
+const ARd=[['झाकीर हुसेन','जगप्रसिद्ध तबलावादक, जन्म १९५१ मुंबई. वडील उस्ताद अल्लारखाँ हे त्यांचे गुरू. पद्मश्री, पद्मभूषण, पद्मविभूषण व ग्रॅमी पुरस्कार मिळाले. १५ डिसेंबर २०२४ रोजी निधन.','जगप्रसिद्ध तबलावादक, जन्म १९५१ मुंबई। पिता उस्ताद अल्लारखाँ उनके गुरु थे। पद्मश्री, पद्मभूषण, पद्मविभूषण व ग्रैमी पुरस्कार मिले। १५ दिसंबर २०२४ को निधन।'],
+['उस्ताद अल्लारखाँ','पंजाब घराण्याचे श्रेष्ठ तबलावादक, जन्म १९१९. पंडित रविशंकर यांना साथ केली. निधन २०००.','पंजाब घराने के श्रेष्ठ तबला वादक, जन्म १९१९। पंडित रविशंकर के साथ संगत की। निधन २०००।'],
+['पंडित किशन महाराज','बनारस घराण्याचे प्रसिद्ध तबलावादक (१९२३–२००८). पद्मश्री व पद्मविभूषण सन्मान.','बनारस घराने के प्रसिद्ध तबला वादक (१९२३–२००८)। पद्मश्री व पद्मविभूषण से सम्मानित।'],
+['पंडित सामताप्रसाद','बनारस घराण्याचे तबलावादक, \'गुदई महाराज\' (१९२१–१९९४). स्पष्ट व गोड बोल हे वैशिष्ट्य.','बनारस घराने के तबला वादक, \'गुदई महाराज\' (१९२१–१९९४)। स्पष्ट व मधुर बोल उनकी विशेषता।'],
+['पंडित सुरेश तळवलकर','महाराष्ट्रातील नामवंत तबलावादक व गुरू, जन्म मुंबई. अनेक शिष्य घडवले.','महाराष्ट्र के प्रसिद्ध तबला वादक व गुरु, जन्म मुंबई। अनेक शिष्य तैयार किए।'],
+['पंडित निखिल घोष','तबलावादक व शिक्षक (१९१८–१९९५). मुंबईत \'संगीत महाभारती\' संस्था स्थापन केली.','तबला वादक व शिक्षक (१९१८–१९९५)। मुंबई में \'संगीत महाभारती\' संस्था की स्थापना की।'],
+['पखवाज – पंडित भवानीशंकर','पखवाज हे प्राचीन ताल-वाद्य ध्रुपद-धमार गायनाला साथ करते. पंडित भवानीशंकर प्रसिद्ध पखवाजवादक.','पखावज प्राचीन ताल-वाद्य है जो ध्रुपद-धमार गायन की संगत करता है। पंडित भवानीशंकर प्रसिद्ध पखावज वादक हैं।'],
+['हार्मोनियम – पंडित अप्पा जळगावकर','महाराष्ट्रातील श्रेष्ठ हार्मोनियम साथीदार व एकल वादक.','महाराष्ट्र के श्रेष्ठ हारमोनियम संगतकार व एकल वादक।']];
+const INd='तबला (Tabla) · पखवाज (Pakhawaj) · हार्मोनियम (Harmonium) · सतार (Sitar) · बासरी (Flute) · सरोद (Sarod) · संतूर (Santoor) · सारंगी (Sarangi) · ढोलक (Dholak)';
+function adraw(q){const AR=E()?ar:ARd.map(a=>[a[0],LG=='mr'?a[1]:a[2]]);const all=ca().concat(AR).filter(a=>(a[0]+a[1]).toLowerCase().includes(q.toLowerCase()));
+app.innerHTML=`<h2>🎶 ${u('ah')}</h2><div class="card" style="cursor:auto"><b>${u('inst')}</b><br>${E()?inst:INd}</div><input id="sq" placeholder="${u('ph')}" value="${q}"><details class="card"><summary><b>${u('add')}</b></summary><input id="an" placeholder="${u('nm')}"><textarea id="at" rows="6" placeholder="${u('inf')}"></textarea><button class="btn" id="ad">${u('sv')}</button></details>`+(all.map(a=>`<div class="card" style="cursor:auto"><b>${a[0]}</b><p style="white-space:pre-wrap">${a[1]}</p></div>`).join('')||'<p>'+u('none')+'</p>');
+const s=$('#sq');s.oninput=()=>{const p=s.selectionStart;adraw(s.value);const n=$('#sq');n.focus();n.setSelectionRange(p,p)};
+$('#ad').onclick=()=>{const n=$('#an').value.trim(),t=$('#at').value.trim();if(!n)return;try{localStorage.setItem('ca',JSON.stringify([[n,t||'-']].concat(ca())))}catch(e){}adraw('')}}
+v.artists=()=>adraw('');
+const _k=kbv;v.kb=()=>{_k();const q=s=>app.querySelector(s);q('h2').textContent='⌨️ '+u('kh');q('p').textContent=u('kn');q('#sp').textContent=u('sp');q('h3').textContent='✍️ '+u('hw');q('#ins').textContent=u('ia');q('#clr').textContent=u('cl');app.querySelectorAll('p')[1].textContent=u('hint')};
+v.lang=()=>{app.innerHTML=`<h2>⚙️ ${u('lh')}</h2><p>${u('lc')}</p>`+[['en','English'],['mr','मराठी'],['hi','हिन्दी']].map(l=>`<label class="card" style="display:block"><input type="radio" name="lgx" value="${l[0]}" ${l[0]==LG?'checked':''} style="width:auto"> ${l[1]}</label>`).join('')+`<button class="btn" id="ok">${u('ok')}</button>`;
+$('#ok').onclick=()=>{LG=document.querySelector('input[name=lgx]:checked').value;try{localStorage.setItem('lg',LG)}catch(e){}apply();v.books()}};
+function apply(){document.documentElement.lang=LG;document.title=u('t');document.querySelector('h1').textContent='🥁 '+u('t');$('#menu').innerHTML=['books:mb','taal:mt','artists:ma','kb:mk','lang:ml'].map(x=>{const[a,b]=x.split(':');return `<button data-v="${a}">${u(b)}</button>`}).join('')}
+Object.assign(UI.en,{qe:'Type your question above, then press OK.',qn:'No answer found. Try a taal name, an artist name, or terms like matra, vibhag, tali, khali, theka, laya, sam, tihai, kayda, tabla.'});
+Object.assign(UI.mr,{qe:'वर तुमचा प्रश्न लिहा आणि ओके दाबा.',qn:'उत्तर सापडले नाही. तालाचे नाव, वादकाचे नाव किंवा मात्रा, विभाग, टाळी, खाली, ठेका, लय, सम, तिहाई, कायदा, तबला असे शब्द वापरून पहा.'});
+Object.assign(UI.hi,{qe:'ऊपर अपना प्रश्न लिखें और ओके दबाएँ।',qn:'उत्तर नहीं मिला। ताल का नाम, वादक का नाम या मात्रा, विभाग, ताली, खाली, ठेका, लय, सम, तिहाई, कायदा, तबला जैसे शब्द आज़माएँ।'});
+const TA=[['teentaal','teental','trital','tintal','त्रिताल','तीनताल','तीन ताल'],['jhaptaal','jhaptal','jhap','झपताल'],['ektaal','ektal','एकताल'],['rupak','roopak','रूपक'],['dadra','दादरा'],['kaharwa','kaharva','keherwa','कहरवा'],['chautaal','chautal','चौताल'],['dhamar','धमार'],['teevra','tivra','tevra','तीव्रा','तीव्र'],['deepchandi','dipchandi','दीपचंदी']];
+const AK=[[['zakir','झाकीर','जाकिर'],0],[['alla rakha','rakha','अल्लारखाँ','अल्लारखा'],1],[['kishan','किशन'],2],[['samta','gudai','सामता'],3],[['talwalkar','तळवलकर','तलवलकर'],4],[['nikhil','निखिल'],5],[['bhavani','pakhawaj','pakhavaj','भवानी','पखवाज','पखावज'],6],[['appa','jalgaonkar','harmonium','अप्पा','हार्मोनियम','हारमोनियम'],7]];
+const TM=[[['matra','मात्रा','मात्राएँ'],{en:'Matra is one beat, the basic unit of time in a taal. Teentaal has 16 matras.',mr:'मात्रा म्हणजे तालाचे एक मूलभूत कालमापन (एक आघात). त्रितालात १६ मात्रा असतात.',hi:'मात्रा ताल की सबसे छोटी इकाई (एक beat) है। तीनताल में १६ मात्राएँ होती हैं।'}],
+[['vibhag','विभाग'],{en:'A vibhag is a section of a taal; matras are grouped into vibhags, e.g. Teentaal is 4+4+4+4.',mr:'विभाग म्हणजे तालाचा एक भाग; मात्रांचे गट. उदा. त्रिताल ४+४+४+४.',hi:'विभाग ताल का एक खंड है; मात्राओं के समूह। जैसे तीनताल ४+४+४+४।'}],
+[['tali','taali','टाळी','ताली'],{en:'Tali is a clap on a vibhag marking a stressed (filled) section. In notation it is shown by numbers (X, 2, 3).',mr:'टाळी म्हणजे विभागावर दिली जाणारी टाळी (भरीचे बोल). नोटेशनमध्ये ती X, २, ३ अशी दाखवतात.',hi:'ताली विभाग पर दी जाने वाली ताली (भरी) है। नोटेशन में इसे X, २, ३ से दिखाते हैं।'}],
+[['khali','खाली'],{en:'Khali is the "empty" wave of the hand instead of a clap, marking a lighter vibhag (shown as 0).',mr:'खाली म्हणजे टाळीऐवजी हाताने दाखवला जाणारा रिकामा विभाग (०).',hi:'खाली ताली की जगह हाथ से दिखाया जाने वाला खाली विभाग (०) है।'}],
+[['theka','ठेका'],{en:'Theka is the basic set pattern of bols that defines a taal. It is the foundation of all tabla playing.',mr:'ठेका म्हणजे तालाचे मूळ बोलांचे स्वरूप. सर्व वादनाचा तो पाया आहे.',hi:'ठेका ताल के बोलों का मूल रूप है। यह सारे वादन का आधार है।'}],
+[['laya','लय'],{en:'Laya is tempo: vilambit (slow), madhya (medium), drut (fast). Thah, dugun, tigun and chaugun are 1x, 2x, 3x and 4x speeds.',mr:'लय म्हणजे गती: विलंबित, मध्य, द्रुत. ठाह, दुगुण, तिगुण, चौगुण या लयीच्या पटी.',hi:'लय यानी गति: विलंबित, मध्य, द्रुत। ठाह, दुगुन, तिगुन, चौगुन लय के गुणन हैं।'}],
+[['sam','सम'],{en:'Sam is the first beat of a taal, where the cycle begins and ends. Compositions are meant to land on it.',mr:'सम म्हणजे तालाची पहिली मात्रा, जिथे आवर्तन सुरू होते व संपते.',hi:'सम ताल की पहली मात्रा है, जहाँ आवर्तन शुरू और खत्म होता है।'}],
+[['tihai','तिहाई'],{en:'Tihai is a phrase played three times so that the last bol lands exactly on sam.',mr:'तिहाई म्हणजे एक बोलसमूह तीनदा वाजवून शेवटचा बोल समेवर आणणे.',hi:'तिहाई एक बोल-समूह को तीन बार बजाकर अंतिम बोल को सम पर लाना है।'}],
+[['kayda','कायदा'],{en:'Kayda is a rule-based theme that is expanded with variations (paltas) and usually ends with a tihai.',mr:'कायदा म्हणजे नियमबद्ध बोलरचना; तिचे पलटे करून विस्तार केला जातो.',hi:'कायदा नियमबद्ध बोल-रचना है, जिसके पलटे बनाकर विस्तार किया जाता है।'}],
+[['tabla','तबला','तबल्या'],{en:'The tabla is a pair of drums: the right-hand dayan (treble) and the left-hand bayan (bass).',mr:'तबला हे दोन वाद्यांची जोडी: उजव्या हाताचा दायाँ आणि डाव्या हाताचा बायाँ.',hi:'तबला दो वाद्यों की जोड़ी है: दाएँ हाथ का दायाँ और बाएँ हाथ का बायाँ।'}]];
+function answer(q){q=q.toLowerCase();const has=k=>/^[a-z ]+$/.test(k)?new RegExp('(^|[^a-z])'+k+'s?([^a-z]|$)').test(q):q.includes(k);
+for(let i=0;i<10;i++)if(TA[i].some(has)){const t=tals[i],b=E()?t[4]:TBd[i];return TN(i)+': '+nd(t[1])+' '+u('mat')+'\n'+u('vib')+': '+nd(t[2])+'\n'+trT(t[3])+'\n'+(b?u('th')+': '+b:u('no'))}
+for(const k of AK)if(k[0].some(has)){const a=E()?ar[k[1]]:[ARd[k[1]][0],ARd[k[1]][LG=='mr'?1:2]];return a[0]+'\n'+a[1]}
+const c=ca().find(a=>q.includes(a[0].toLowerCase()));if(c)return c[0]+'\n'+c[1];
+const T=TM.find(m=>m[0].some(has));return T?T[1][LG]:u('qn')}
+const _k2=v.kb;v.kb=()=>{_k2();const o=document.createElement('div');o.innerHTML='<button class="btn" id="qok">'+u('ok')+'</button><div id="qa" class="card" style="cursor:auto;display:none;white-space:pre-wrap"></div>';$('#note').after(o);
+$('#qok').onclick=()=>{const t=$('#note').innerText.trim(),a=$('#qa');a.style.display='block';a.textContent=t?answer(t):u('qe')}};
+apply();v.books();
+</script></body></html>
